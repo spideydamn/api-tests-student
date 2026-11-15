@@ -9,11 +9,22 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/tidwall/gjson"
 
+	"api-tests-template/internal/managers/advertisements"
+	advertisementModels "api-tests-template/internal/managers/advertisements/models"
 	"api-tests-template/internal/managers/auth"
 	"api-tests-template/internal/managers/auth/models"
 	"api-tests-template/internal/managers/myAdvertisements"
+	"api-tests-template/internal/utils"
 
 	base "api-tests-template/tests"
+)
+
+const (
+	titleLength           = 20
+	descriptionLength     = 40
+	advertisementPrice    = 100
+	advertisementQuantity = 1
+	photoPath             = "../advertisementCreate/testdata/photo.png"
 )
 
 type TestSuite struct {
@@ -38,6 +49,18 @@ func (s *TestSuite) TearDownSuite() {
 
 // Positive: Проверяем получение собственных объявлений в профиле
 func (s *TestSuite) TestGetMyAdvertisementsPositive() {
+	t := s.T()
+	// Arrange – создаём объявление только для этой проверки.
+	t.Log("Подготовка собственного объявления")
+	data := advertisementModels.CreateRequest{
+		Title:       utils.RandomString(titleLength),
+		Description: utils.RandomString(descriptionLength),
+		Price:       advertisementPrice,
+		Quantity:    advertisementQuantity,
+		Photos:      []string{photoPath},
+	}
+	advertisements.CreateWithCleanup(t, s.loginData.Token, data)
+
 	var advertisementsBody string
 	s.Run("Получаем список собственных объявлений", func() {
 		advertisementsBody = myAdvertisements.GetMyAdvertisements(s.T(), s.loginData.Token, http.StatusOK, 50)
